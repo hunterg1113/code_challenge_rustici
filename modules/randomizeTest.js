@@ -1,5 +1,7 @@
-function adjacentShuffle(n, ...arrays) {
-  let temp, i;
+function adjacentShuffle(...arrays) {
+  let n = arrays[0].length,
+    temp,
+    i;
 
   while (n) {
     i = Math.floor(Math.random() * n--);
@@ -16,9 +18,10 @@ export function randomizeTest(test) {
   const { questions, answers, choices } = test;
 
   for (let i = questions.length - 1; i >= 0; i--) {
-    adjacentShuffle(i, answers[i], choices[i]);
-    adjacentShuffle(i, questions, answers, choices);
+    adjacentShuffle(answers[i], choices[i]);
   }
+
+  adjacentShuffle(questions, answers, choices);
 
   return test;
 }
