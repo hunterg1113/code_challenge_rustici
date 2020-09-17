@@ -5,4 +5,5 @@ class Test {
     this.answers = answers;
   }
 }
+
 export default Test;

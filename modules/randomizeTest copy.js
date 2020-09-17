@@ -1,12 +1,12 @@
 function adjacentShuffle(...arrays) {
-  let n = arrays[0].length;
+  const n = arrays[0].length;
 
-  while (n) {
-    const i = Math.floor(Math.random() * n--);
+  for (let i = n - 1; i >= 1; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
 
     arrays.forEach((array) => {
-      const temp = array[n];
-      array[n] = array[i];
+      const temp = array[j];
+      array[j] = array[i];
       array[i] = temp;
     });
   }
@@ -15,7 +15,7 @@ function adjacentShuffle(...arrays) {
 export function randomizeTest(test) {
   const { questions, answers, choices } = test;
 
-  for (let i = questions.length - 1; i >= 0; i--) {
+  for (let i in questions) {
     adjacentShuffle(answers[i], choices[i]);
   }
 
