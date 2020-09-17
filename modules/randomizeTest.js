@@ -22,6 +22,4 @@ export function randomizeTest(test) {
   }
 
   adjacentShuffle(questions, answers, choices);
-
-  return test;
 }
