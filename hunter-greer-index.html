@@ -137,8 +137,22 @@
             [0, 0, 0, 1, 0],
             [1, 1, 0],
             [0, 0, 0, 1],
-          ],
-          test = new Test(questions, choices, answers);
+          ];
+
+        let qus = [],
+          chs = [],
+          ans = [];
+
+        for (let i = 0; i < 10; i++) {
+          qus = qus.concat(questions);
+          ans = ans.concat(answers);
+          chs = cs.concat(choices);
+        }
+
+        console.log(qus, chs, ans);
+
+        // const test = new Test(qus, chs, ans);
+        const test = new Test(questions, choices, answers);
 
         renderTest(test, document.getElementById("questions"));
       })();

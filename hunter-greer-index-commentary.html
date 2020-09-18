@@ -1,0 +1,224 @@
+<!--
+    INSTRUCTIONS:
+
+    Here's a small problem that a client once asked us to solve as part of a larger project.
+    The client has an existing web-based system for delivering a test containing multiple choice
+    questions to a learner (the relevant parts of which are included on this page). The client
+    asked us to modify this code so that the test questions are delivered in a random order every
+    time a learner attempts the test. Furthermore, the order in which the answers to the questions
+    are presented should also be randomized.
+
+    The existing framework for creating and displaying a test has been provided for you below. Your
+    task is to comprehend the client's code and data structure then implement the `randomizeTest`
+    function to perform the randomization of the question and answer order. Please explain your work
+    and thought process.
+
+    Some background on the project from the client that may affect your solution:
+
+    - There are over 600 of these tests deployed to hundreds of thousands of users
+    - There are never more then 20 questions or so per test, each with no more than 6 answers but the
+      code should be able to handle an arbitrary number of both questions and answers
+    - This code is maintained by several developers in different organizations
+    - The code is only required to work in all modern browsers
+
+    When submitting your response, please rename this file to include your name.
+
+    If you have any questions, please do not hesitate to ask.
+-->
+<html lang="en">
+  <head>
+    <title>Rustici Software - Initial Developer Hiring Test</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+      }
+      li.question {
+        padding-top: 5px;
+        padding-bottom: 5px;
+      }
+      label.choice {
+        display: block;
+      }
+      .correct {
+        color: #336897;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Randomized Questions</h2>
+    <ul id="questions"></ul>
+
+    <script>
+      // Right off the bat, writing Javascript in an index.html file is not regular practice for me, so a bit outside my comfort zone. Minor concerns of
+      // possible overlooked context issues but, for the most part, pretty confident in the solution provided.
+
+      (function () {
+        function randomizeTest(test) {
+          // First thought is whether to enforce a "pure function" by cloning the input so the object manipulation I plan later
+          // does not cause any unwanted side-effects were the input's data to be consumed elsewhere in the app. The resulting increase to space
+          // complexity would be undesirable, however, as I would prefer to maintain it constant.
+          //
+          // Given the provided context and no mention in the requirements, I am opting for the performance benefits of manipulating the
+          // input object directly instead of generating a clone to be acted upon.
+          //
+          // Note: In my everyday dev work, I would almost always give priority to pure-functional programming. Perhaps spurred by daily
+          // interaction with Redux, I've grown a great appreciation for the maintainability and reusability of a "simpler" codebase... and been
+          // pleasantly surprised by just how challenging it can be to write something simply.
+          //
+          // A pure-functional implementation:
+          //  function randomizeTest({ ...clone }) {
+          //   const { questions, choices, answers } = clone;
+          //   ...
+          //   return clone;
+          //  }
+          //
+          const { questions, choices, answers } = test;
+
+          // Variation of Fisher-Yates Shuffle algorithm to handle adjacent list traversal by iterating over common indices and
+          // performing the same random indices swap of all arrays provided to maintain correct order.
+          function adjacentShuffle(...arrays) {
+            // Because arrays are linked by common indices, it doesn't really matter which one's length I get to begin iterative swapping. Were this to be implemented
+            // in a real app and passed dynamic data, prop validation (null check, set a default) would probably make sense here just for peace of mind. Since that's
+            // not the case here, I left it out.
+            let n = arrays[0].length;
+
+            // n and i will be the indices swapped for each of the arrays, ie whatever swap was made to the choices array, i also need to make to the answers array so
+            // the correct mapping is maintained among linked nodes (1 choice: 1 answer)
+            while (n) {
+              const i = Math.floor(Math.random() * n--);
+
+              // Due to the nested loop here, we do see an increase in time complexity when compared to original Y-K implementation, O(n) -> O(m * n), but still
+              // optimal when compared to this same variation applied to other shuffle algos. One possible way to reduce the time complexity, though compromising space
+              // complexity, seems doable with DFS to cache swap vertices of furthest root/level then carry out the same execution as it executes back up the stack.
+              // Still, the arrays being passed currently (n=2, n=3) are small enough to not cause much concern on overall performance and don't expect any issues
+              // handling any of the metrics laid out in the instructions.
+              arrays.forEach(array => {
+                const temp = array[n];
+                array[n] = array[i];
+                array[i] = temp;
+              });
+            }
+          }
+
+          // Opted for a bottom-up approach because I think it allows better/faster comprehension of the F-Y algo in its original context, by removing the concern of
+          // dependent child nodes. Once grasped, I think the arrays iteration makes sense as the outside loop walks down common indices.
+          for (let i = questions.length - 1; i >= 0; i--) {
+            adjacentShuffle(answers[i], choices[i]);
+          }
+
+          // Base-level done, time to move up to the top and carry out the same shuffle
+          adjacentShuffle(questions, answers, choices);
+
+          return test;
+        }
+
+        function Test(questions, choices, answers) {
+          this.questions = questions;
+          this.choices = choices;
+          this.answers = answers;
+        }
+
+        function renderTest(test, parent) {
+          const randomizedTest = randomizeTest(test);
+
+          for (let i = 0; i < randomizedTest.questions.length; i += 1) {
+            const qElement = document.createElement("li");
+            let correctCount = 0;
+
+            qElement.setAttribute("class", "question");
+            qElement.appendChild(
+              document.createTextNode(randomizedTest.questions[i])
+            );
+
+            for (let j = 0; j < randomizedTest.answers[i].length; j += 1) {
+              if (randomizedTest.answers[i][j] === 1) {
+                correctCount += 1;
+              }
+            }
+
+            for (let j = 0; j < randomizedTest.choices[i].length; j += 1) {
+              const choiceLabelElement = document.createElement("label"),
+                choiceInputElement = document.createElement("input");
+
+              choiceInputElement.setAttribute(
+                "name",
+                (correctCount === 1 ? "radio" : "check") + i
+              );
+              choiceInputElement.setAttribute(
+                "type",
+                correctCount === 1 ? "radio" : "checkbox"
+              );
+              choiceInputElement.setAttribute("value", j);
+
+              choiceLabelElement.classList.add("choice");
+              if (randomizedTest.answers[i][j] === 1) {
+                choiceLabelElement.classList.add("correct");
+              }
+
+              choiceLabelElement.appendChild(choiceInputElement);
+              choiceLabelElement.appendChild(
+                document.createTextNode(randomizedTest.choices[i][j])
+              );
+
+              qElement.appendChild(choiceLabelElement);
+              parent.appendChild(qElement);
+            }
+          }
+        }
+
+        const questions = [
+            "What can you find in Rustici Software's office?",
+            "All of Rustici Software employees are expected to work no more than ____ hours per week.",
+            "The end users of Rustici Software's products number in the _________",
+            "Rustici Software is a (choose all that apply):",
+            "Tim likes to wear:",
+          ],
+          choices = [
+            [
+              "Dart Board",
+              "Ping Pong Table",
+              "Cubicles",
+              "Laptops with dual monitors",
+              "TPS reports, ummm yeah",
+            ],
+            ["80", "40", "50", "60"],
+            ["Tens", "Hundreds", "Thousands", "Millions", "Billions"],
+            [
+              "Great place to work",
+              "Respected leader in its field",
+              "Place where people don't matter, just results",
+            ],
+            ["Capri pants", "Goth attire", "Sport coat", "T-shirt and shorts"],
+          ],
+          answers = [
+            [1, 1, 0, 1, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1, 0],
+            [1, 1, 0],
+            // TODO: Not sure if intentional but the answers:choices is off here in original file (ie 5 answers : 4 choices).
+            // Updated to same lengths in this file... also really hoping 'T-shirt and shorts' is the right answer.
+            [0, 0, 0, 1],
+          ];
+
+        let qs = [],
+          cs = [],
+          a = [];
+
+        for (let i = 0; i < 10; i++) {
+          console.log(i);
+          qs = qs.concat(questions);
+          a = a.concat(answers);
+          cs = cs.concat(choices);
+        }
+
+        const test = new Test(qs, cs, as);
+
+        renderTest(test, document.getElementById("questions"));
+      })();
+    </script>
+  </body>
+</html>
